@@ -1,0 +1,3 @@
+Simple Subversion and Git repository creation plugin for Redmine. With this plugin SVN/Git repository creation and registration becomes very easy and needs just one click (or even no click).
+
+The plugin adds "Create new repository" button to the Subversion/Git repository addition form (Project » "Settings" » "Repository" » "Subversion"/"Git"). With just one click on this button a user can create local Subversion/Git repository and register it in Redmine. The plugin also allows to create SVN/Git repository automatically on project registration.
