@@ -5,6 +5,10 @@ production:
     path: /var/svn
     svnadmin: /usr/bin/svnadmin
     url: svn
+    chown:
+      user: uid
+      group: gid
+    
 
 staging:
   auto_create: false
@@ -13,5 +17,8 @@ staging:
     path: /var/svn
     svnadmin: /usr/bin/svnadmin
     url: svn
+    chown:
+      user: uid
+      group: gid
 
 development:
