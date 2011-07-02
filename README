@@ -1,3 +1,43 @@
-Simple Subversion and Git repository creation plugin for Redmine. With this plugin SVN/Git repository creation and registration becomes very easy and needs just one click (or even no click).
+# What is redminde_scm
 
-The plugin adds "Create new repository" button to the Subversion/Git repository addition form (Project » "Settings" » "Repository" » "Subversion"/"Git"). With just one click on this button a user can create local Subversion/Git repository and register it in Redmine. The plugin also allows to create SVN/Git repository automatically on project registration.
+It's a redmine/chiliptoject plugin for creating Subversion repositories using the web interface.
+
+## How it works
+
+The plugin adds "Create new repository" button to the Subversionrepository addition form (Project » "Settings" » "Repository" » "Subversion"). With just one click on this button a user can create local Subversion/Git repository and register it in Redmine. The plugin also allows to create SVNrepository automatically on project registration.
+
+## Configutation
+
+The configuration file should be placed at `<app_root>/config/scm.yml`. Configuration options are described below:
+
+    production:
+      auto_create: false
+      deny_delete: true
+      svn:
+        path: /var/svn
+        svnadmin: /usr/bin/svnadmin
+        chown:
+          user: uid
+          group: gid
+    
+
+* auto_create: (booelan) indicates if the repository is created automatically on the moment of the project registration.
+* deny_delete: (booelan) prevents deleting repositories created with the plugin if set to `true`.
+* svn
+    * path: indicates the path for creating SVN repositories
+    * svnadmin: indicates the path of the `svnadmin` executable
+    * options: used for adding options to the `svnadmin` command
+    * chown: If the user creating the repositories and the user serving them are different, this option will properly `chmod` the repository.
+        * user: Indicates the user that owns the repository files
+        * group: Indicates the group that owns the repository files
+
+## Allowing use of sudo for the rails user
+
+If the users serving the rails application and the SVN files are different this plugin requires executing two commands as `sudo`.
+
+In order to allow this, these two lines should be added to the `/etc/sudoers` file:
+
+    %rails_user ALL=(ALL)NOPASSWD:/bin/chown www-data\:subversion /var/svn/* -R
+    %rails_user ALL=(ALL)NOPASSWD:/bin/chmod g+w /var/svn/* -R
+
+Here `rails_user` is serving the redmine or chiliproject application while `www-data:subverions` is the one serving the SVN files.
