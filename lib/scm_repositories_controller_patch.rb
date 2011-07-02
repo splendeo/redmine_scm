@@ -1,18 +1,14 @@
 require_dependency 'repositories_controller'
 
 module ScmRepositoriesControllerPatch
-
+  
   def self.included(base)
-    base.extend(ClassMethods)
     base.send(:include, InstanceMethods)
     base.class_eval do
       unloadable
       before_filter :delete_scm, :only => :destroy
-      alias_method :edit, :edit_with_add
     end
-  end
-
-  module ClassMethods
+    base.send(:alias_method_chain, :edit, :add)
   end
 
   module InstanceMethods
@@ -50,46 +46,38 @@ module ScmRepositoriesControllerPatch
         @repository = Repository.factory(params[:repository_scm])
         @repository.project = @project if @repository
       end
-
-      if request.post? && @repository
-        if params[:operation].present? && params[:operation] == 'add'
-          if params[:repository]
-
-            if params[:repository_scm] == 'Subversion'
-              svnconf = ScmConfig['svn']
-              path = svnconf['path'].dup
-              path.gsub!(%r{\\}, "/") if Redmine::Platform.mswin?
-              matches = Regexp.new("^file://#{Regexp.escape(path)}/([^/]+)/?$").match(params[:repository]['url'])
-              if matches
-                repath = Redmine::Platform.mswin? ? "#{svnconf['path']}\\#{matches[1]}" : "#{svnconf['path']}/#{matches[1]}"
-                if File.directory?(repath)
-                  @repository.errors.add(:url, :already_exists)
-                else
-                  RAILS_DEFAULT_LOGGER.info "Creating SVN reporitory: #{repath}"
-                  args = [ svnconf['svnadmin'], 'create', repath ]
-                  if svnconf['options']
-                    if svnconf['options'].is_a?(Array)
-                      args += svnconf['options']
-                    else
-                      args << svnconf['options']
-                    end
-                  end
-                  if system(*args)
-                    @repository.created_with_scm = true
-                  else
-                    RAILS_DEFAULT_LOGGER.error "Repository creation failed"
-                  end
-                end
-                if matches[1] != @project.identifier
-                  flash[:warning] = l(:text_cannot_be_used_redmine_auth)
-                end
-              else
-                @repository.errors.add(:url, :should_be_of_format_local, :format => "file://#{path}/<#{l(:label_repository_format)}>/")
-              end
+      
+      if request.post? && @repository && params[:repository_scm] == 'Subversion'&& params[:operation].present? && params[:operation] == 'add'
+        if params[:repository]
+          svnconf = ScmConfig['svn']
+          path = svnconf['path'].dup
+          path.gsub!(%r{\\}, "/") if Redmine::Platform.mswin?
+          matches = Regexp.new("^file://#{Regexp.escape(path)}/([^/]+)/?$").match(params[:repository]['url'])
+          if matches
+            repath = Redmine::Platform.mswin? ? "#{svnconf['path']}\\#{matches[1]}" : "#{svnconf['path']}/#{matches[1]}"
+            if File.directory?(repath)
+              @repository.errors.add(:url, :already_exists)
             else
-              @repository.errors.add_to_base(:scm_not_supported)
+              RAILS_DEFAULT_LOGGER.info "Creating SVN reporitory: #{repath}"
+              args = [ svnconf['svnadmin'], 'create', repath ]
+              if svnconf['options']
+                if svnconf['options'].is_a?(Array)
+                  args += svnconf['options']
+                else
+                  args << svnconf['options']
+                end
+              end
+              if system(*args)
+                @repository.created_with_scm = true
+              else
+                RAILS_DEFAULT_LOGGER.error "Repository creation failed"
+              end
             end
-
+            if matches[1] != @project.identifier
+              flash[:warning] = l(:text_cannot_be_used_redmine_auth)
+            end
+          else
+            @repository.errors.add(:url, :should_be_of_format_local, :format => "file://#{path}/<#{l(:label_repository_format)}>/")
           end
         end
 
@@ -99,14 +87,8 @@ module ScmRepositoriesControllerPatch
           @repository.save
         end
       end
-
-      render(:update) do |page|
-        page.replace_html("tab-content-repository", :partial => 'projects/settings/repository')
-        if @repository && !@project.repository
-          @project.reload
-          page.replace_html("main-menu", render_main_menu(@project))
-        end
-      end
+      
+      edit_without_add
     end
 
   end
