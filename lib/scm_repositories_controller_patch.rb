@@ -69,6 +69,14 @@ module ScmRepositoriesControllerPatch
               end
               if system(*args)
                 @repository.created_with_scm = true
+                
+                #Execute chown and chmod
+                if svnconf['chown'].present?
+                  uid = svnconf['chown']['user']
+                  gid = svnconf['chown']['group']
+                  system("sudo chown #{uid}:#{gid} #{repath} -R")
+                  system("sudo chmod g+w #{repath} -R")
+                end
               else
                 RAILS_DEFAULT_LOGGER.error "Repository creation failed"
               end
