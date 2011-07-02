@@ -69,13 +69,11 @@ module ScmProjectPatch
     end
 
     def repository_exists
-      if @scm.present? && self.identifier.present? && ScmConfig['auto_create']
-        if @scm == 'Subversion'
-          svnconf = ScmConfig['svn']
-          path = Redmine::Platform.mswin? ? "#{svnconf['path']}\\#{self.identifier}" : "#{svnconf['path']}/#{self.identifier}"
-          if File.directory?(path)
-            errors.add_to_base(:repository_exists_for_identifier)
-          end
+      if @scm.present? && self.identifier.present? && ScmConfig['auto_create'] && @scm == 'Subversion'
+        svnconf = ScmConfig['svn']
+        path = Redmine::Platform.mswin? ? "#{svnconf['path']}\\#{self.identifier}" : "#{svnconf['path']}/#{self.identifier}"
+        if File.directory?(path)
+          errors.add_to_base(:repository_exists_for_identifier)
         end
       end
     end
